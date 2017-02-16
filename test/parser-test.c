@@ -1,7 +1,7 @@
 #include "../src/parser/parser.h"
 #include <stdio.h>
 #include <tidy.h>
-#include <buffio.h>
+#include <tidybuffio.h>
 #include <curl.h>
  
 /* curl write callback, to fill tidy's input buffer...  */ 
@@ -25,7 +25,7 @@ void dumpNode(TidyDoc doc, TidyNode tnod, int indent)
       printf("%*.*s%s ", indent, indent, "<", name);
       /* walk the attribute list */ 
       for(attr=tidyAttrFirst(child); attr; attr=tidyAttrNext(attr) ) {
-        printf(tidyAttrName(attr));
+        printf("%s",tidyAttrName(attr));
         tidyAttrValue(attr)?printf("=\"%s\" ",
                                    tidyAttrValue(attr)):printf(" ");
       }
