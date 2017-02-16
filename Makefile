@@ -2,6 +2,16 @@ CC=gcc
 CFLAGS=-Wall
 PROD=prod/
 SRC=src/
+LIB=lib/
+SCRIPT=script/
+INCLUDE_CURL=curl-7.52.1/include/curl
+INCLUDE_TIDY=tidy-html5-master/include/
+LIBRARY_CURL=curl-7.52.1/src
+LIBRARY_TIDY=tidy-html5-master/src
+#NAMES=curl tidy
+#LIBRARY=curl-7.52.1/src tidy-html5-master/src
+#INCLUDES=curl-7.52.1/include/curl tidy-html5-master/include/
+
 
 default:
 
@@ -9,13 +19,13 @@ default:
 ungoliant: ungoliant.o
 	$(CC) -o $(PROD)$@ $(PROD)$^
 ## Test
+parser-test: parser-test.o
+	$(CC) -o $(PROD)$@ $(PROD)$^ -ltidy -L$(LIB)$(LIBRARY_TIDY) -lcurl -L$(LIB)$(LIBRARY_CURL)
 crawler-test: crawler-test.o
 	$(CC) -o $(PROD)$@ $(PROD)$^
-parser-test: parser-test.o
+indexer-test: indexer-test.o
 	$(CC) -o $(PROD)$@ $(PROD)$^
 queryengine-test: queryengine-test.o
-	$(CC) -o $(PROD)$@ $(PROD)$^
-indexer-test: indexer-test.o
 	$(CC) -o $(PROD)$@ $(PROD)$^
 
 # Object
@@ -24,26 +34,26 @@ ungoliant.o: $(SRC)ungoliant.c
 ## Libraries
 crawler.o: $(SRC)crawler/crawler.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
-indexer.o: $(SRC)indexer/indexer.c
-	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
 parser.o: $(SRC)parser/parser.c
+	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
+indexer.o: $(SRC)indexer/indexer.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
 queryengine.o: $(SRC)queryengine/queryengine.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
 ## Test
-indexer-test.o: $(SRC)indexer/indexer-test.c
-	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
 crawler-test.o: $(SRC)crawler/crawler-test.c $(SRC)crawler/crawler.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
 parser-test.o: $(SRC)parser/parser-test.c $(SRC)parser/parser.c
+	$(CC) -o $(PROD)$@ -c $< $(CFLAGS) -I$(LIB)$(INCLUDE_TIDY) -I$(LIB)$(INCLUDE_CURL) 
+indexer-test.o: $(SRC)indexer/indexer-test.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
 queryengine-test.o: $(SRC)queryengine/queryengine-test.c $(SRC)queryengine/queryengine.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
 
 # Service
 init:
-	mkdir $(PROD)
+	mkdir $(PROD); echo "run:\n\tcd script && chmod 777 install.sh && ./install.sh && cd ../"
 clean:
 	rm -rf $(PROD)*.o
 mrproper: clean
-	rm -rf $(PROD)
+	rm -rf $(PROD) $(LIB)
