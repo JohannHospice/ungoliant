@@ -1,6 +1,7 @@
 CC=gcc
 CFLAGS=-Wall
 PROD=prod/
+TEST=test/
 SRC=src/
 LIB=lib/
 SCRIPT=script/
@@ -41,13 +42,13 @@ indexer.o: $(SRC)indexer/indexer.c
 queryengine.o: $(SRC)queryengine/queryengine.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
 ## Test
-crawler-test.o: $(SRC)crawler/crawler-test.c $(SRC)crawler/crawler.c
+crawler-test.o: $(TEST)crawler-test.c $(SRC)crawler/crawler.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
-parser-test.o: $(SRC)parser/parser-test.c $(SRC)parser/parser.c
+parser-test.o: $(TEST)parser-test.c $(SRC)parser/parser.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS) -I$(LIB)$(INCLUDE_TIDY) -I$(LIB)$(INCLUDE_CURL) 
-indexer-test.o: $(SRC)indexer/indexer-test.c
+indexer-test.o: $(TEST)indexer-test.c $(SRC)indexer/indexer-test.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
-queryengine-test.o: $(SRC)queryengine/queryengine-test.c $(SRC)queryengine/queryengine.c
+queryengine-test.o: $(TEST)queryengine-test.c $(SRC)queryengine/queryengine.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
 
 # Service
