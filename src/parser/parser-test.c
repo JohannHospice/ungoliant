@@ -1,7 +1,7 @@
 #include <stdio.h>
-#include <tidy/tidy.h>
-#include <tidy/buffio.h>
-#include <curl/curl.h>
+#include <tidy.h>
+#include <buffio.h>
+#include <curl.h>
  
 /* curl write callback, to fill tidy's input buffer...  */ 
 uint write_cb(char *in, uint size, uint nmemb, TidyBuffer *out)
