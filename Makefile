@@ -77,3 +77,9 @@ install-libcurl: prepare-lib-dir
 	wget https://curl.haxx.se/download/curl-7.52.1.tar.gz
 	tar zxvf curl-7.52.1.tar.gz -C $(LIB)
 	rm curl-7.52.1.tar.gz
+install-gumbo: prepare-lib-dir
+	wget https://github.com/google/gumbo-parser/archive/master.zip
+	unzip master.zip -d $(LIB)
+	./$(LIB)gumbo-parser-master/autogen.sh
+	./$(LIB)gumbo-parser-master/configure
+	rm master.zip
