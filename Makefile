@@ -40,7 +40,7 @@ ungoliant.o: $(SRC)ungoliant.c
 ## Libraries
 crawler.o: $(SRC)crawler/crawler.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
-parser.o: $(SRC)parser/parser.c
+parser.o: $(SRC)parser/parser.c $(SRC)parser/tools.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
 indexer.o: $(SRC)indexer/indexer.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
@@ -49,7 +49,7 @@ queryengine.o: $(SRC)queryengine/queryengine.c
 ## Test
 crawler-test.o: $(TEST)crawler-test.c $(SRC)crawler/crawler.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
-parser-test.o: $(TEST)parser-test.c $(SRC)parser/parser.c
+parser-test.o: $(TEST)parser-test.c $(SRC)parser/parser.c $(SRC)parser/tools.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS) -I$(TIDY_INCLUDE_DIR) -I$(CURL_INCLUDE_DIR) 
 indexer-test.o: $(TEST)indexer-test.c $(SRC)indexer/indexer-test.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
