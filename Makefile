@@ -25,9 +25,9 @@ default:
 ungoliant: ungoliant.o parser.o
 	$(CC) -o $(PROD)$@ $(PROD)$^
 ## Test
-parser-test: $(PROD)parser-test.o $(PROD)parser.o $(PROD)tools.o
-	#foreach $@ add $(PROD)
-	$(CC) -o $(PROD)$@ $^ -l$(TIDY_NAME) -L$(TIDY_LIBRARY_DIR) -l$(CURL_NAME) -L$(CURL_LIBRARY_DIR)
+parser-test: parser-test.o parser.o tools.o
+	$(CC) -o $(PROD)$@ $(foreach file, $^, $(PROD)$(file))\
+		-l$(TIDY_NAME) -L$(TIDY_LIBRARY_DIR) -l$(CURL_NAME) -L$(CURL_LIBRARY_DIR)
 crawler-test: crawler-test.o
 	$(CC) -o $(PROD)$@ $(PROD)$^
 indexer-test: indexer-test.o
@@ -44,9 +44,11 @@ crawler.o: $(SRC)crawler/crawler.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
 ### Parser
 parser.o: $(SRC)parser/parser.c $(SRC)parser/tools.h
-	$(CC) -o $(PROD)$@ -c $< $(CFLAGS) -I$(TIDY_INCLUDE_DIR) -I$(CURL_INCLUDE_DIR)
+	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)\
+		-I$(TIDY_INCLUDE_DIR) -I$(CURL_INCLUDE_DIR)
 tools.o: $(SRC)parser/tools.c
-	$(CC) -o $(PROD)$@ -c $< $(CFLAGS) -I$(TIDY_INCLUDE_DIR)
+	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)\
+		-I$(TIDY_INCLUDE_DIR) -I$(CURL_INCLUDE_DIR)
 ### Indexer
 indexer.o: $(SRC)indexer/indexer.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
@@ -57,7 +59,8 @@ queryengine.o: $(SRC)queryengine/queryengine.c
 crawler-test.o: $(TEST)crawler-test.c $(SRC)crawler/crawler.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
 parser-test.o: $(TEST)parser-test.c $(SRC)parser/parser.h
-	$(CC) -o $(PROD)$@ -c $< $(CFLAGS) -I$(TIDY_INCLUDE_DIR) -I$(CURL_INCLUDE_DIR) 
+	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)\
+		-I$(TIDY_INCLUDE_DIR) -I$(CURL_INCLUDE_DIR) 
 indexer-test.o: $(TEST)indexer-test.c $(SRC)indexer/indexer-test.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
 queryengine-test.o: $(TEST)queryengine-test.c $(SRC)queryengine/queryengine.c
