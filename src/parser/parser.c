@@ -1,8 +1,6 @@
 #include <stdio.h>
-#include <tidy.h>
-#include <tidybuffio.h>
-#include <curl.h>
 #include "tools.h"
+#include "parser.h"
 
 /* Traverse the document tree */ 
 void dumpNode(TidyDoc doc, TidyNode tnod, int indent)
@@ -73,7 +71,7 @@ int parser(CURL *curl){
 		}
 	}
 	else
-	fprintf(stderr, "%s\n", curl_errbuf);
+	fprintf(stderr, "%s\n", "curl_errbuf");
 
 	curl_easy_cleanup(curl);
 	tidyBufFree(&docbuf);
