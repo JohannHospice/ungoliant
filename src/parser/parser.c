@@ -1,81 +1,51 @@
 #include <stdio.h>
+#include <curl.h>
+#include <tidy.h>
+#include <tidybuffio.h>
+#include <string.h>
 #include "tools.h"
-#include "parser.h"
-
-/* Traverse the document tree */ 
-void dumpNode(TidyDoc doc, TidyNode tnod, int indent)
-{
-  TidyNode child;
-  for(child = tidyGetChild(tnod); child; child = tidyGetNext(child) ) {
-    ctmbstr name = tidyNodeGetName(child);
-    if(name) {
-      /* if it has a name, then it's an HTML tag ... */ 
-      TidyAttr attr;
-      printf("%*.*s%s ", indent, indent, "<", name);
-      /* walk the attribute list */ 
-      for(attr=tidyAttrFirst(child); attr; attr=tidyAttrNext(attr) ) {
-        printf("%s",tidyAttrName(attr));
-        tidyAttrValue(attr)?printf("=\"%s\" ",
-                                   tidyAttrValue(attr)):printf(" ");
-      }
-      printf(">\n");
+#define SIZEOF_TIDYNODE sizeof(TidyNode)
+int queryNodeByDoc(TidyDoc doc, TidyNode tnod, char *target, TidyNode *buffer, int size) {
+    TidyNode child;
+    //erreur dans les parages
+    for (child = tidyGetChild(tnod); child; child = tidyGetNext(child)) {
+        const char *name = tidyNodeGetName(child);
+        if (name && strcmp(name, target) == 0) {
+            int sizeofBuffer = sizeof(buffer);
+            if (sizeofBuffer < sizeofBuffer + SIZEOF_TIDYNODE)
+                buffer = realloc(buffer, (size + 1) *SIZEOF_TIDYNODE);
+            buffer[size] = child;
+            size++;
+        }
+        size = queryNodeByDoc(doc, child, target, buffer, size);
     }
-    else {
-      /* if it doesn't have a name, then it's probably text, cdata, etc... */ 
-      TidyBuffer buf;
-      tidyBufInit(&buf);
-      tidyNodeGetText(doc, child, &buf);
-      printf("%*.*s\n", indent, indent, buf.bp?(char *)buf.bp:"");
-      tidyBufFree(&buf);
-    }
-    dumpNode(doc, child, indent + 4); /* recursive */ 
-  }
+    return size;
 }
 
-CURL *download(char *url){
-	CURL *curl;
-	char curl_errbuf[CURL_ERROR_SIZE];
-	curl = curl_easy_init();
-	curl_easy_setopt(curl, CURLOPT_URL, url);
-	curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_errbuf);
-	curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
-	curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
-	return curl;
+char *queryAttrByNode(TidyNode node, char *target) {
+    TidyAttr attr;
+    char *value;
+    for (attr = tidyAttrFirst(node); attr; attr = tidyAttrNext(attr)) {
+        const char *name = tidyAttrName(attr);
+        if (name && strcmp(name, target) == 0)
+            value = (char *) tidyAttrValue(attr);
+    }
+    return value;
 }
 
-int parser(CURL *curl){
-	TidyDoc tdoc;
-	TidyBuffer docbuf = {0};
-	TidyBuffer tidy_errbuf = {0};
-	int err;
-	tdoc = tidyCreate();
-	tidyOptSetBool(tdoc, TidyForceOutput, yes); /* try harder */ 
-	tidyOptSetInt(tdoc, TidyWrapLen, 4096);
-	tidySetErrorBuffer(tdoc, &tidy_errbuf);
-	tidyBufInit(&docbuf);
+char **queryAttrByAllNodes(TidyNode *nodes, int nodes_size, char *target, char **buffers) {
+    for (int i = 0; i < nodes_size; ++i)
+        buffers[i] = queryAttrByNode(nodes[i], target);
+    return buffers;
+}
 
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &docbuf);
-	err=curl_easy_perform(curl);
-	if(!err) {
-		err = tidyParseBuffer(tdoc, &docbuf); /* parse the input */ 
-			if(err >= 0) {
-				err = tidyCleanAndRepair(tdoc); /* fix any problems */ 
-				if(err >= 0) {
-					err = tidyRunDiagnostics(tdoc); /* load tidy error buffer */ 
-				if(err >= 0) {
-					dumpNode(tdoc, tidyGetRoot(tdoc), 0); /* walk the tree */ 
-					fprintf(stderr, "%s\n", tidy_errbuf.bp); /* show errors */ 
-				}
-			}
-		}
-	}
-	else
-	fprintf(stderr, "%s\n", "curl_errbuf");
-
-	curl_easy_cleanup(curl);
-	tidyBufFree(&docbuf);
-	tidyBufFree(&tidy_errbuf);
-	tidyRelease(tdoc);
-	return err;
+int parseCURL(TidyDoc tdoc, TidyBuffer docbuf, CURL *curl) {
+    int err = curl_easy_perform(curl);
+    if (!err)
+        err = tidyParseBuffer(tdoc, &docbuf);
+    if (err >= 0)
+        err = tidyCleanAndRepair(tdoc);
+    if (err >= 0)
+        err = tidyRunDiagnostics(tdoc);
+    return err;
 }
