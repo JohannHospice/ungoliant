@@ -28,8 +28,9 @@ ungoliant: ungoliant.o parser.o
 parser-test: parser-test.o parser.o tools.o
 	$(CC) -o $(PROD)$@ $(foreach file, $^, $(PROD)$(file))\
 		-l$(TIDY_NAME) -L$(TIDY_LIBRARY_DIR) -l$(CURL_NAME) -L$(CURL_LIBRARY_DIR)
-crawler-test: crawler-test.o
-	$(CC) -o $(PROD)$@ $(PROD)$^
+crawler-test: crawler-test.o crawler.o parser.o tools.o
+	$(CC) -o $(PROD)$@ $(foreach file, $^, $(PROD)$(file))\
+		-l$(TIDY_NAME) -L$(TIDY_LIBRARY_DIR) -l$(CURL_NAME) -L$(CURL_LIBRARY_DIR)
 indexer-test: indexer-test.o
 	$(CC) -o $(PROD)$@ $(PROD)$^
 queryengine-test: queryengine-test.o
@@ -40,13 +41,14 @@ ungoliant.o: $(SRC)ungoliant.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
 ## Libraries
 ### Crawler
-crawler.o: $(SRC)crawler/crawler.c
-	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
-### Parser
-parser.o: $(SRC)parser/parser.c $(SRC)parser/tools.h
+crawler.o: $(SRC)crawler/crawler.c $(SRC)parser/parser.h $(SRC)tools.h
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)\
 		-I$(TIDY_INCLUDE_DIR) -I$(CURL_INCLUDE_DIR)
-tools.o: $(SRC)parser/tools.c
+### Parser
+parser.o: $(SRC)parser/parser.c $(SRC)tools.h
+	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)\
+		-I$(TIDY_INCLUDE_DIR) -I$(CURL_INCLUDE_DIR)
+tools.o: $(SRC)tools.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)\
 		-I$(TIDY_INCLUDE_DIR) -I$(CURL_INCLUDE_DIR)
 ### Indexer
@@ -56,11 +58,12 @@ indexer.o: $(SRC)indexer/indexer.c
 queryengine.o: $(SRC)queryengine/queryengine.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
 ## Test
-crawler-test.o: $(TEST)crawler-test.c $(SRC)crawler/crawler.c
-	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
+crawler-test.o: $(TEST)crawler-test.c $(SRC)crawler/crawler.h
+	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)\
+		-I$(TIDY_INCLUDE_DIR) -I$(CURL_INCLUDE_DIR)
 parser-test.o: $(TEST)parser-test.c $(SRC)parser/parser.h
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)\
-		-I$(TIDY_INCLUDE_DIR) -I$(CURL_INCLUDE_DIR) 
+		-I$(TIDY_INCLUDE_DIR) -I$(CURL_INCLUDE_DIR)
 indexer-test.o: $(TEST)indexer-test.c $(SRC)indexer/indexer-test.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
 queryengine-test.o: $(TEST)queryengine-test.c $(SRC)queryengine/queryengine.c
