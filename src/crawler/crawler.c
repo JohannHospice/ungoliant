@@ -36,19 +36,21 @@ void crawl(char *url) {
     char curl_errbuf[CURL_ERROR_SIZE];
     CURL *curl = initialiseCURL(url, curl_errbuf, docbuf);
     if(curl && !curl_easy_perform(curl)) {
-        if (parseCURL(tdoc, docbuf) >= 0) {
-            TidyNode *nodesA = malloc(sizeof(TidyNode));
-            int nodesA_size = queryNodeByDoc(tdoc, tidyGetRoot(tdoc), "a", nodesA, 0);
+        if (parse(tdoc, docbuf) >= 0) {
+            printf("\nparsed:\n");
+            tidySaveStdout(tdoc);
+            TidyNode *nodes = malloc(sizeof(TidyNode));
+            int nodes_size = queryNodeByDoc(nodes, 0, tdoc, tidyGetRoot(tdoc), "a");
 
-            char *attrs[nodesA_size];
-            queryAttrByAllNodes(nodesA, nodesA_size, "href", attrs);
+            char *attrs[nodes_size];
+            queryAttrByAllNodes(attrs, nodes, nodes_size, "href");
 
-            printf("\nlinks:\n");
-            printArrayString(attrs, nodesA_size);
+            printf("\nextract %d a[href=]:\n", nodes_size);
+            printArrayString(attrs, nodes_size);
 
-            free(nodesA);
-            tidyBufFree(&tidy_errbuf);
+            free(nodes);
             tidyBufFree(&docbuf);
+            tidyBufFree(&tidy_errbuf);
             tidyRelease(tdoc);
         }
         else
