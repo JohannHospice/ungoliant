@@ -41,11 +41,23 @@ char **queryAttrByAllNodes(char **buffers, TidyNode *nodes, int nodes_size, char
     return buffers;
 }
 
-int parse(TidyDoc tdoc, TidyBuffer docbuf) {
-    int err = tidyParseBuffer(tdoc, &docbuf);
-    if (err >= 0)
-        err = tidyCleanAndRepair(tdoc);
+int parseAux(TidyDoc tdoc) {
+    int err = tidyCleanAndRepair(tdoc);
     if (err >= 0)
         err = tidyRunDiagnostics(tdoc);
+    return err;
+}
+
+int parseBuffer(TidyDoc tdoc, TidyBuffer docbuf) {
+    int err = tidyParseBuffer(tdoc, &docbuf);
+    if (err >= 0)
+        err = parseAux(tdoc);
+    return err;
+}
+
+int parseFile(TidyDoc tdoc, char *filename) {
+    int err = tidyParseFile(tdoc, filename);
+    if (err >= 0)
+        err = parseAux(tdoc);
     return err;
 }
