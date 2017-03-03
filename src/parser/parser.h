@@ -1,7 +1,7 @@
 #include <curl.h>
 #include <tidy.h>
 
-char **queryAttrByAllNodes(TidyNode *nodes, int nodes_size, char *target, char **buffers);
+int queryNodeByDoc(TidyNode *buffer, int size, TidyDoc doc, TidyNode tnod, char *target);
 char *queryAttrByNode(TidyNode node, char *target);
-int queryNodeByDoc(TidyDoc doc, TidyNode tnod, char *target, TidyNode *res, int size);
-int parseCURL(TidyDoc tdoc, TidyBuffer docbuf);
+char **queryAttrByAllNodes(char **buffers, TidyNode *nodes, int nodes_size, char *target);
+int parse(TidyDoc tdoc, TidyBuffer docbuf);
