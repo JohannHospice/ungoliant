@@ -1,1 +1,2 @@
-void crawl(char *url);
+void crawlUrl(char *url);
+void crawlFile(char *filename);
