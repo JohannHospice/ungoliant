@@ -1,12 +1,14 @@
 #include <stdio.h>
 
-void printArrayString(char **in , int in_size) {
-    for (int i = 0; i < in_size; ++i)
-        printf("%s\n", in [i]);
+void printArrayString(char **arr , int arr_size) {
+    int i = 0;
+    for (i = 0; i < arr_size; ++i)
+        printf("%s\n", arr[i]);
 }
 
 void cleanArray(char **buffer, int size){
-    for(int i = 0; i < size; i++){
+    int i = 0;
+    for (i = 0; i < size; i++){
         if(buffer[i] == NULL){
             int j = i;
             while(j< size - 1){

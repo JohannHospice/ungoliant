@@ -35,7 +35,8 @@ char *queryAttrByNode(TidyNode node, char *target) {
 }
 
 char **queryAttrByAllNodes(char **buffers, TidyNode *nodes, int nodes_size, char *target) {
-    for (int i = 0; i < nodes_size; ++i)
+    int i = 0;
+    for (i = 0; i < nodes_size; ++i)
         buffers[i] = queryAttrByNode(nodes[i], target);
     return buffers;
 }
