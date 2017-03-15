@@ -1,134 +1,97 @@
-#include <curl.h> 
-#include <tidy.h> 
-#include <tidybuffio.h> 
-#include "../parser/parser.h"
+#include <curl.h>
+#include <tidy.h>
+#include <string.h>
+#include <tidybuffio.h>
+#include "crawler.h"
 #include "../tools.h"
+#include "../parser/parser.h"
 
 uint write_cb(char *in, uint size, uint nmemb, TidyBuffer *out) {
-  uint r = size * nmemb;
-  tidyBufAppend(out, in, r);
-  return r;
+    uint r = size * nmemb;
+    tidyBufAppend(out, in, r);
+    return r;
 }
 
-int isUrlAbsolute(char *url){
-  if(url == NULL || url[0] == '\0')
-    return -1;
-  int absolute = 1, ok = 1;
-  const char *req = "http://", *reqs = "https://";
-  
-  for(int i = 0; url[i] != '\0' && absolute == 1; i++){
-    if((i < 7 && url[i] == req[i]) || (i < 8 && url[i] == reqs[i])) { 
-    }
-    else if(url[i] == '/')
-      ok = 0;
-    else if(ok == 0)
-      absolute = 0;
-  }
-  if(absolute == 0) printf("%s\n", url);
-  
-  return absolute;
-}
-
-char **normalize(char **attrs, int size, char *url, int url_size) {
-  char **value = (char**) calloc(size, sizeof(char*));
-  for (int i = 0; i < size; ++i) {
-    char *cc = calloc(255, sizeof(char));
-    if(isUrlAbsolute(attrs[i]) == 0) {
-        int j = 0;
-        while(attrs[i][j]!='\0') {
-          cc[j] = attrs[i][j];
-          j++;
+void crawlUrlRec(char *url, int rec) {
+    if(rec >= 0) {
+        printf("rec %d\n", rec);
+        struct info_page *info_page = crawlUrl(url);
+        if(info_page) {
+            info_page->info_pages = calloc(info_page->links_size, sizeof(struct info_page*));
+            printInfoPage(info_page);
+            for (int i = 0; i < info_page->links_size; ++i)
+                crawlUrlRec(info_page->links[i], rec - 1);
+            freeInfoPage(&info_page);
         }
-        cc[j+1] = '\0';
-        value[i] = cc;
+		printf("\n");
     }
-  }
-  return value;
 }
 
-int size(char *url){
-  int i = 0;
-  while(url[i]!='\0')
-    i++;
-  return i;
-}
+struct info_page *crawlUrl(char *url) {
+    struct info_page *info_page = NULL;
 
-char **crawlUrl(char *url, int rec) {
-  TidyBuffer docbuf = {0};
-  TidyBuffer tidy_errbuf = {0};
-  TidyDoc tdoc = tidyCreate();
-  tidyOptSetBool(tdoc, TidyForceOutput, yes);
-  tidyOptSetInt(tdoc, TidyWrapLen, 4096);
-  tidySetErrorBuffer(tdoc, &tidy_errbuf);
-  tidyBufInit(&docbuf);
+    TidyBuffer docbuf = {0};
+    TidyBuffer tidy_errbuf = {0};
+    TidyDoc tdoc = tidyCreate();
+    tidyOptSetBool(tdoc, TidyForceOutput, yes);
+    tidyOptSetInt(tdoc, TidyWrapLen, 4096);
+    tidySetErrorBuffer(tdoc, &tidy_errbuf);
+    tidyBufInit( &docbuf);
 
-  char **links;
-  char curl_errbuf[CURL_ERROR_SIZE];
-  CURL *curl = curl_easy_init();
-  if (curl) {
-    curl_easy_setopt(curl, CURLOPT_URL, url);
-    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_errbuf);
-    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
-    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &docbuf);
-    if (!curl_easy_perform(curl)) {
-      if (parseBuffer(tdoc, docbuf) >= 0) {
-        TidyNode *nodes = malloc(sizeof(TidyNode) *100);
-        int nodes_size = queryNodeByDoc(nodes, 0, tdoc, tidyGetRoot(tdoc), "a");
+    char curl_errbuf[CURL_ERROR_SIZE];
+    CURL *curl = curl_easy_init();
+    if (curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, url);
+        curl_easy_setopt(curl, CURLOPT_VERBOSE, 0L);
+        curl_easy_setopt(curl, CURLOPT_POSTREDIR, 3);
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1L);
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &docbuf);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
+        curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_errbuf);
+        if (!curl_easy_perform(curl)) {
+            char *tmp;
+            info_page = malloc(sizeof(struct info_page));
+            if(curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &tmp) == 0) {
+                int tmplen = strlen(tmp);
+                info_page->url = calloc(tmplen, sizeof(char));
+                for (int i = 0; i < tmplen; ++i)
+                    info_page->url[i] = tmp[i];
+            }
+            if (parseBuffer(tdoc, docbuf) >= 0) {
+                TidyNode *nodes;
+                int nodes_size;
+                queryNodeByDoc(&nodes, &nodes_size, tdoc, tidyGetRoot(tdoc), "a");
 
-        char *attrs[nodes_size];
-        queryAttrByAllNodes(attrs, nodes, nodes_size, "href");
+                queryAttrByAllNodes(&(info_page->links), nodes, nodes_size, "href");
+                info_page->links_size = nodes_size;
 
-        links = normalize(attrs, nodes_size, url, size(url));
-
-        printf("\nextract %d a[href=]:\n", nodes_size);
-        printArrayString(links, nodes_size);
-
-/*
-        for (int i = 0; i < nodes_size; ++i)
-          crawlUrl(attrs[i], rec - 1);
-*/
-        free(nodes);
-        tidyBufFree(&docbuf);
-        tidyBufFree(&tidy_errbuf);
-        tidyRelease(tdoc);
-      } else
-        fprintf(stderr, "%s\n", tidy_errbuf.bp);
-    } else {
-      perror("error");
-      fprintf(stderr, "%s\n", curl_errbuf);
+                free(nodes);
+                tidyBufFree(&docbuf);
+                tidyBufFree(&tidy_errbuf);
+                tidyRelease(tdoc);
+            } else {
+                fprintf(stderr, "url: %s\nerror tidy: %s\n", url, tidy_errbuf.bp);
+                info_page = NULL;
+            }
+        } else {
+            fprintf(stderr, "url: %s\nerror curl: %s\n", url, curl_errbuf);
+            info_page = NULL;
+        }
+        curl_easy_cleanup(curl);
     }
-  }
-  curl_easy_cleanup(curl);
-  return links;
+    return info_page;
 }
 
-//ne fonctionne pas encore
-void crawlFile(char *filename) {
-  TidyBuffer docbuf = {0};
-  TidyBuffer tidy_errbuf = {0};
-  TidyDoc tdoc = tidyCreate();
-  tidyOptSetBool(tdoc, TidyForceOutput, yes);
-  tidyOptSetInt(tdoc, TidyWrapLen, 4096);
-  tidySetErrorBuffer(tdoc, &tidy_errbuf);
-  tidyBufInit( &docbuf);
+void printInfoPage(struct info_page *info_page) {
+    printf("url: %s\nlinks_size: %d\nlinks:\n", info_page->url, info_page->links_size);
+    printArrayString(info_page->links, info_page->links_size);
+}
 
-  if (parseFile(tdoc, filename) >= 0) {
-    TidyNode *nodes = malloc(sizeof(TidyNode) *100);
-    int nodes_size = queryNodeByDoc(nodes, 0, tdoc, tidyGetRoot(tdoc), "a");
-
-    char *attrs[nodes_size];
-    queryAttrByAllNodes(attrs, nodes, nodes_size, "href");
-
-    printf("\nextract %d a[href=]:\n", nodes_size);
-    printArrayString(attrs, nodes_size);
-
-    free(nodes);
-    tidyBufFree( &docbuf);
-    tidyBufFree( &tidy_errbuf);
-    tidyRelease(tdoc);
-  } else
-    fprintf(stderr, "%s\n", tidy_errbuf.bp);
-  printf("# end\n");
+void freeInfoPage(struct info_page **info_page) {
+    for (int i = 0; i < (*info_page)->links_size; ++i)
+        free((*info_page)->links[i]);
+    free((*info_page)->url);
+    free(*info_page);
+    *info_page = NULL;
 }

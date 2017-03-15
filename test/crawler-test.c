@@ -1,9 +1,11 @@
 #include "../src/crawler/crawler.h"
 #include <stdio.h>
 int main(int argc, char **argv) {
-    if(argc < 2)
+	printf("\n\tCRAWLER TEST on %s\n\n", argv[1]);
+    if(argc < 2){
     	printf("Need argument url\n");
-    else
-    	crawlUrl(argv[1], 3);
+	    return 0;
+    }
+	crawlUrlRec(argv[1], 2);
     return 0;
 }
