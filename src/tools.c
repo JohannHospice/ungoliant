@@ -1,9 +1,8 @@
 #include <stdio.h>
 
 void printArrayString(char **arr , int arr_size) {
-    int i = 0;
-    for (i = 0; i < arr_size; ++i)
-        printf("%s\n", arr[i]);
+    for (int i = 0; i < arr_size; ++i)
+        printf("\t- %s\n", arr[i]);
 }
 
 void cleanArray(char **buffer, int size){
