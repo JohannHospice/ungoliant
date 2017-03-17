@@ -1,4 +1,3 @@
-#include <curl.h>
 #include <tidy.h>
 
 void queryNodeByDoc(TidyNode **buffer, int *size, TidyDoc doc, TidyNode tnod, char *target);

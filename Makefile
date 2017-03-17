@@ -28,7 +28,7 @@ ungoliant: ungoliant.o parser.o
 parser-test: parser-test.o parser.o tools.o
 	$(CC) -o $(PROD)$@ $(foreach file, $^, $(PROD)$(file))\
 		-l$(TIDY_NAME) -L$(TIDY_LIBRARY_DIR) -l$(CURL_NAME) -L$(CURL_LIBRARY_DIR)
-crawler-test: crawler-test.o crawler.o parser.o tools.o
+crawler-test: crawler-test.o crawler.o parser.o tools.o webpage.o
 	$(CC) -o $(PROD)$@ $(foreach file, $^, $(PROD)$(file))\
 		-l$(TIDY_NAME) -L$(TIDY_LIBRARY_DIR) -l$(CURL_NAME) -L$(CURL_LIBRARY_DIR)
 indexer-test: indexer-test.o
@@ -41,7 +41,7 @@ ungoliant.o: $(SRC)ungoliant.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
 ## Libraries
 ### Crawler
-crawler.o: $(SRC)crawler/crawler.c $(SRC)parser/parser.h $(SRC)tools.h
+crawler.o: $(SRC)crawler/crawler.c $(SRC)parser/parser.h $(SRC)tools.h $(SRC)crawler/webpage.h
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)\
 		-I$(TIDY_INCLUDE_DIR) -I$(CURL_INCLUDE_DIR)
 ### Parser
@@ -49,6 +49,9 @@ parser.o: $(SRC)parser/parser.c $(SRC)tools.h
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)\
 		-I$(TIDY_INCLUDE_DIR) -I$(CURL_INCLUDE_DIR)
 tools.o: $(SRC)tools.c
+	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)\
+		-I$(TIDY_INCLUDE_DIR) -I$(CURL_INCLUDE_DIR)
+webpage.o: $(SRC)crawler/webpage.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)\
 		-I$(TIDY_INCLUDE_DIR) -I$(CURL_INCLUDE_DIR)
 ### Indexer
@@ -70,7 +73,7 @@ queryengine-test.o: $(TEST)queryengine-test.c $(SRC)queryengine/queryengine.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
 
 # Service
-init: prepare-prod-dir install
+init: prepare-prod-dir prepare-lib-dir install
 clean:
 	rm -rf $(PROD)*.o
 mrproper: clean
@@ -81,18 +84,16 @@ prepare-lib-dir:
 prepare-prod-dir:
 	test -d $(PROD) || mkdir $(PROD)
 ## Installer
-install: install-tidy install-libcurl
+install: install-tidy install-libcurl install-libsoup
 install-tidy: prepare-lib-dir
 	wget https://github.com/htacg/tidy-html5/archive/master.zip
 	unzip master.zip -d $(LIB)
-	rm master.zip
 install-libcurl: prepare-lib-dir
 	wget https://curl.haxx.se/download/curl-7.52.1.tar.gz
 	tar zxvf curl-7.52.1.tar.gz -C $(LIB)
 	rm curl-7.52.1.tar.gz
-install-gumbo: prepare-lib-dir
-	wget https://github.com/google/gumbo-parser/archive/master.zip
+	rm master.zip
+install-libsoup: prepare-lib-dir
+	wget https://github.com/gnome/libsoup/archive/master.zip
 	unzip master.zip -d $(LIB)
-	./$(LIB)gumbo-parser-master/autogen.sh
-	./$(LIB)gumbo-parser-master/configure
 	rm master.zip
