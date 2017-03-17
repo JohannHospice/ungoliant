@@ -1,9 +1,6 @@
 #include <stdio.h>
-#include <curl.h>
 #include <tidy.h>
 #include <tidybuffio.h>
-#include <string.h>
-#include "../tools.h"
 #define SIZEOF_TIDYNODE sizeof(TidyNode)
 
 void queryNodeByDocRec(TidyNode **buffer, int *size, TidyDoc doc, TidyNode tnod, char *target) {
