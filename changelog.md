@@ -1,5 +1,8 @@
 # Changelog
 
+## 27/03/2017
+- Fin du développement du module de "parsing url"
+
 ## 19/03/2017
 - Fin implémentation du crawl récursif
 - stockage des informations de page web dans structures
