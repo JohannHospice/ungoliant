@@ -39,7 +39,7 @@ void queryAttrByNode(char **buffer, TidyNode node, char *target) {
         }
     }
 }
-
+//WARN
 void queryAttrByAllNodes(char ***buffers, TidyNode *nodes, int nodes_size, char *target) {
     *buffers = (char**)calloc(nodes_size, sizeof(char*));
     for (int i = 0; i < nodes_size; ++i)

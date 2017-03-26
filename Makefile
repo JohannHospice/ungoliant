@@ -14,8 +14,9 @@ CURL_NAME=curl
 TIDY_DIRNAME=tidy-html5-master/
 CURL_DIRNAME=curl-7.52.1/
 
-CURL_INCLUDE_DIR=$(LIB)$(CURL_DIRNAME)$(INCLUDE)curl
+CURL_INCLUDE_DIR=$(LIB)$(CURL_DIRNAME)$(INCLUDE)
 TIDY_INCLUDE_DIR=$(LIB)$(TIDY_DIRNAME)$(INCLUDE)
+
 CURL_LIBRARY_DIR=$(LIB)$(CURL_DIRNAME)$(SRC)
 TIDY_LIBRARY_DIR=$(LIB)$(TIDY_DIRNAME)$(SRC)
 
@@ -28,7 +29,7 @@ ungoliant: ungoliant.o parser.o
 parser-test: parser-test.o parser.o tools.o
 	$(CC) -o $(PROD)$@ $(foreach file, $^, $(PROD)$(file))\
 		-l$(TIDY_NAME) -L$(TIDY_LIBRARY_DIR) -l$(CURL_NAME) -L$(CURL_LIBRARY_DIR)
-crawler-test: crawler-test.o crawler.o parser.o tools.o webpage.o
+crawler-test: crawler-test.o crawler.o parser.o tools.o webpage.o parseurl.o
 	$(CC) -o $(PROD)$@ $(foreach file, $^, $(PROD)$(file))\
 		-l$(TIDY_NAME) -L$(TIDY_LIBRARY_DIR) -l$(CURL_NAME) -L$(CURL_LIBRARY_DIR)
 indexer-test: indexer-test.o
@@ -41,7 +42,7 @@ ungoliant.o: $(SRC)ungoliant.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)
 ## Libraries
 ### Crawler
-crawler.o: $(SRC)crawler/crawler.c $(SRC)parser/parser.h $(SRC)tools.h $(SRC)crawler/webpage.h
+crawler.o: $(SRC)crawler/crawler.c $(SRC)parser/parser.h $(SRC)tools.h $(SRC)crawler/webpage.h $(SRC)crawler/parseurl.h
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)\
 		-I$(TIDY_INCLUDE_DIR) -I$(CURL_INCLUDE_DIR)
 ### Parser
@@ -52,6 +53,9 @@ tools.o: $(SRC)tools.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)\
 		-I$(TIDY_INCLUDE_DIR) -I$(CURL_INCLUDE_DIR)
 webpage.o: $(SRC)crawler/webpage.c
+	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)\
+		-I$(TIDY_INCLUDE_DIR) -I$(CURL_INCLUDE_DIR)
+parseurl.o: $(SRC)crawler/parseurl.c
 	$(CC) -o $(PROD)$@ -c $< $(CFLAGS)\
 		-I$(TIDY_INCLUDE_DIR) -I$(CURL_INCLUDE_DIR)
 ### Indexer
@@ -88,12 +92,8 @@ install: install-tidy install-libcurl install-libsoup
 install-tidy: prepare-lib-dir
 	wget https://github.com/htacg/tidy-html5/archive/master.zip
 	unzip master.zip -d $(LIB)
+	rm master.zip
 install-libcurl: prepare-lib-dir
 	wget https://curl.haxx.se/download/curl-7.52.1.tar.gz
 	tar zxvf curl-7.52.1.tar.gz -C $(LIB)
 	rm curl-7.52.1.tar.gz
-	rm master.zip
-install-libsoup: prepare-lib-dir
-	wget https://github.com/gnome/libsoup/archive/master.zip
-	unzip master.zip -d $(LIB)
-	rm master.zip
