@@ -1,14 +1,16 @@
 struct url{
     char *protocole;
     char *domain;
-    char *port;
     char *path;
+    char *other;
     int type;
 };
 
 struct url *newUrl();
+struct url *parseUrl(const char *source);
 void freeUrl(struct url **url);
-void printUrl(struct url *url);
-struct url *parseUrl(char *url);
-char *composeUrl(struct url *url);
-int relativeToAbsoluteUrl(struct url *relative, struct url *base);
+void printUrl(const struct url *url);
+
+char *composeUrl(const struct url *url);
+void composeUrlBuff(char **buff, const struct url *url);
+int relativeToAbsoluteUrl(struct url *relative, const struct url *base);

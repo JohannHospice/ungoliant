@@ -1,3 +1,4 @@
+#include "parseurl.h"
 #include "webpage.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,6 +14,7 @@ int getTotalSize(struct treepage *treepage) {
 void printInfoPage(struct infopage *infopage) {
     printf("url: %s\nlinks_size: %d\nlinks:\n", infopage->url, infopage->links_size);
     printArrayString(infopage->links, infopage->links_size);
+    printUrl(infopage->parseurl);
 }
 
 void printTreepage(struct treepage *treepage) {
@@ -23,10 +25,12 @@ void printTreepage(struct treepage *treepage) {
 }
 
 void freeInfoPage(struct infopage **infopage) {
+    freeUrl(&(*infopage)->parseurl);
     for (int i = 0; i < (*infopage)->links_size; ++i)
         free((*infopage)->links[i]);
     free((*infopage)->url);
     free(*infopage);
+
     *infopage = NULL;
 }
 

@@ -7,38 +7,28 @@
 #include "../src/crawler/parseurl.h"
 
 void testParseurl(){
-    /*
-    char *relative ="dskqld.html";
-
-    struct url *url1 = parseUrl(sr);
-    struct url *url2 = parseUrl(relative);
-    printUrl(url1);
-    printUrl(url2);
-    
-    if(isUrlAbsolute(url2) == 0){
-        printf("relat\n");
-        struct url *url3 = relativeToAbsoluteUrl(relative, url1->domain);
-        printUrl(url3);
-    }
-    */
     char *absStr = "https://github.com/fdsfd/fdgf";
-    char *relStr = "/blabla/fmdls";
+    char *relStr[5] = {"/blabla/fmdls",  "index.html#link", "#blabla", "?s=blabla&k=0", "fdfsfds"};
 
-    struct url *relUrl = parseUrl(relStr);
-    printUrl(relUrl);
-    
+    struct url *relUrl = parseUrl(relStr[1]);
     struct url *absUrl = parseUrl(absStr);
+
+    printUrl(relUrl);
+    printf("\n");
     printUrl(absUrl);
+    printf("\n");
 
     relativeToAbsoluteUrl(relUrl, absUrl);
+    
     printUrl(relUrl);
+    printf("\n");
 
     char *str = composeUrl(relUrl);
     printf("%s\n", str);
+
+    free(str);
     freeUrl(&relUrl);
     freeUrl(&absUrl);
-    free(str);
-
 }
 
 void testCrawler(int argc, char **argv){
@@ -49,6 +39,7 @@ void testCrawler(int argc, char **argv){
     printf("relative link not supported\n");
     printf("crawling (1=success, 0=failure, .=crawl/parse)...\n");
     struct treepage *treepage = crawlUrlRec(url, depth, depth);
+
     if(treepage){
         printf("\nnumber of pages crawled: %d\n\n\tDISPLAY tree\n\n", getTotalSize(treepage));
         printTreepage(treepage);
