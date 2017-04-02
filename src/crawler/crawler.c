@@ -21,32 +21,33 @@ struct treepage *crawlUrlRec(char *url, int max, int depth) {
     printf(".");
     fflush(stdout);
 
-    struct infopage *tmp = crawlUrl(url);
+    struct infopage *infotmp = crawlUrl(url);
 
-    if(tmp != NULL) {
+    if(infotmp != NULL) {
         printf("1");
         fflush(stdout);
 
-        struct treepage *treepage = malloc(sizeof(treepage));
-        treepage->infopage = tmp;
+        struct treepage *treepage = malloc(sizeof(struct treepage));
+        treepage->infopage = infotmp;
         treepage->depth = max - depth;
 
         treepage->treepage = calloc(treepage->infopage->links_size, sizeof(struct treepage*));
         treepage->treepage_size = 0;
         for (int i = 0; i < treepage->infopage->links_size; ++i){
+            if(treepage->infopage->links[i] == NULL)
+                break;
             struct url *linkUrl = parseUrl(treepage->infopage->links[i]);
-
             if(linkUrl->type != -1){
                 if(linkUrl->type > 0)
                     relativeToAbsoluteUrl(linkUrl, treepage->infopage->parseurl);
                 char *link = composeUrl(linkUrl);
-                freeUrl(&linkUrl);
-                struct treepage *tmp = crawlUrlRec(link, max, depth - 1);
-                if(tmp != NULL) {
-                    treepage->treepage[treepage->treepage_size] = tmp;
+                struct treepage *treetmp = crawlUrlRec(link, max, depth - 1);
+                if(treetmp != NULL) {
+                    treepage->treepage[treepage->treepage_size] = treetmp;
                     treepage->treepage_size++;
                 }
             }
+            freeUrl(&linkUrl);
         }
         return treepage;
     }
@@ -54,7 +55,9 @@ struct treepage *crawlUrlRec(char *url, int max, int depth) {
     fflush(stdout);
     return NULL;
 }
-
+/**
+* 
+*/
 struct infopage *crawlUrl(char *url) {
     struct infopage *infopage = NULL;
 
@@ -64,7 +67,7 @@ struct infopage *crawlUrl(char *url) {
     tidyOptSetBool(tdoc, TidyForceOutput, yes);
     tidyOptSetInt(tdoc, TidyWrapLen, 4096);
     tidySetErrorBuffer(tdoc, &tidy_errbuf);
-    tidyBufInit( &docbuf);
+    tidyBufInit(&docbuf);
 
     char curl_errbuf[CURL_ERROR_SIZE];
     CURL *curl = curl_easy_init();
@@ -77,19 +80,20 @@ struct infopage *crawlUrl(char *url) {
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &docbuf);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
         curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_errbuf);
+        //curl
         if (!curl_easy_perform(curl)) {
             char *rebuilturl;
             infopage = malloc(sizeof(struct infopage));
             printf(".");
             fflush(stdout);
-
+            //get url used during curl
             if(curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &rebuilturl) == 0) {
-                infopage->url = calloc(strlen(rebuilturl), sizeof(char));
+                infopage->url = calloc(strlen(rebuilturl)+1, sizeof(char));
                 infopage->parseurl = parseUrl(rebuilturl);
                 strcpy(infopage->url, rebuilturl);
                 infopage->links_size = 0;
             }
-
+            //parse
             if (parseBuffer(tdoc, docbuf) >= 0) {
                 TidyNode *nodes;
                 int nodes_size;
@@ -101,9 +105,9 @@ struct infopage *crawlUrl(char *url) {
                 free(nodes);
                 tidyBufFree(&docbuf);
                 tidyBufFree(&tidy_errbuf);
-                tidyRelease(tdoc);
             }
         }
+        tidyRelease(tdoc);
         curl_easy_cleanup(curl);
     }
     return infopage;
