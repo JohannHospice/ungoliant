@@ -49,7 +49,7 @@ void testCrawler(int argc, char **argv){
         printf("no result\n");
 }
 int main(int argc, char **argv) {
-    testParseurl();
-    //testCrawler(argc, argv);
+    //testParseurl();
+    testCrawler(argc, argv);
     return 0;
 }

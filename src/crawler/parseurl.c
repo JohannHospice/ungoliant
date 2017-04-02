@@ -118,10 +118,29 @@ void printUrl(const struct url *url) {
 */
 }
 
-char *composeUrl(const struct url *url){
-    char *str = malloc(sizeof(char));
-    composeUrlBuff(&str, url);
-    return str;
+char *composeUrl(const struct url *url){    
+    char *composedUrl = NULL;
+    switch(url->type){
+        case 0:
+            composedUrl = calloc(1 + 4 + strlen(url->protocole) + strlen(url->domain) + strlen(url->path) + strlen(url->other), sizeof(char));
+            sprintf(composedUrl, "%s://%s/%s%s", 
+                url->protocole, 
+                url->domain, 
+                url->path, 
+                url->other);
+            return composedUrl;
+        case 1:
+            composedUrl = calloc(1 + 1 + strlen(url->path) + strlen(url->other), sizeof(char));
+            sprintf(composedUrl, "/%s%s", 
+                url->path, 
+                url->other);
+            return composedUrl;
+        case 2:
+            composedUrl = calloc(1 + strlen(url->other), sizeof(char));
+            strcpy(composedUrl, url->other);
+            return composedUrl;
+    }
+    return composedUrl;
 }
 
 void composeUrlBuff(char **buff, const struct url *url){
