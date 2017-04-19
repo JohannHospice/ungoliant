@@ -14,34 +14,43 @@ uint write_cb(char *in, uint size, uint nmemb, TidyBuffer *out) {
     return r;
 }
 
-struct treepage *crawlUrlRec(char *url, int max, int depth) {
-    if(depth <= 0)
+int extractAllLinks(char ***array, TidyDoc tdoc){
+    TidyNode *nodes;
+    int nodes_size;
+    queryNodeByDoc(&nodes, &nodes_size, tdoc, tidyGetRoot(tdoc), "a");
+    queryAttrByAllNodes(array, &nodes_size, nodes, "href");
+    free(nodes);
+    return nodes_size;
+}
+
+struct treepage *getTreePage(char *url, int max, int depth) {
+    if(depth < 1)
         return NULL;
 
     printf(".");
     fflush(stdout);
 
-    struct infopage *infotmp = crawlUrl(url);
-
+    struct infopage *infotmp = getInfoPage(url);
     if(infotmp != NULL) {
-        printf("1");
+        printf("1(%d)", infotmp->links_size);
         fflush(stdout);
 
         struct treepage *treepage = malloc(sizeof(struct treepage));
         treepage->infopage = infotmp;
         treepage->depth = max - depth;
 
-        treepage->treepage = calloc(treepage->infopage->links_size, sizeof(struct treepage*));
         treepage->treepage_size = 0;
-        for (int i = 0; i < treepage->infopage->links_size; ++i){
-            if(treepage->infopage->links[i] == NULL)
+        treepage->treepage = calloc(infotmp->links_size, sizeof(struct treepage*));
+        struct url *baseUrl = parseUrl(infotmp->url);
+        for (int i = 0; i < infotmp->links_size; ++i){
+            if(infotmp->links[i] == NULL)
                 break;
-            struct url *linkUrl = parseUrl(treepage->infopage->links[i]);
+            struct url *linkUrl = parseUrl(infotmp->links[i]);
             if(linkUrl->type != -1){
                 if(linkUrl->type > 0)
-                    relativeToAbsoluteUrl(linkUrl, treepage->infopage->parseurl);
+                    relativeToAbsoluteUrl(linkUrl, baseUrl);
                 char *link = composeUrl(linkUrl);
-                struct treepage *treetmp = crawlUrlRec(link, max, depth - 1);
+                struct treepage *treetmp = getTreePage(link, max, depth - 1);
                 if(treetmp != NULL) {
                     treepage->treepage[treepage->treepage_size] = treetmp;
                     treepage->treepage_size++;
@@ -49,6 +58,7 @@ struct treepage *crawlUrlRec(char *url, int max, int depth) {
             }
             freeUrl(&linkUrl);
         }
+        treepage->treepage = realloc(treepage->treepage, (treepage->treepage_size + 1) * sizeof(struct treepage*));
         return treepage;
     }
     printf("0");
@@ -58,7 +68,7 @@ struct treepage *crawlUrlRec(char *url, int max, int depth) {
 /**
 * 
 */
-struct infopage *crawlUrl(char *url) {
+struct infopage *getInfoPage(char *url) {
     struct infopage *infopage = NULL;
 
     TidyBuffer docbuf = {0};
@@ -84,25 +94,15 @@ struct infopage *crawlUrl(char *url) {
         if (!curl_easy_perform(curl)) {
             char *rebuilturl;
             infopage = malloc(sizeof(struct infopage));
-            printf(".");
-            fflush(stdout);
+            infopage->links_size = 0;
             //get url used during curl
             if(curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &rebuilturl) == 0) {
                 infopage->url = calloc(strlen(rebuilturl)+1, sizeof(char));
-                infopage->parseurl = parseUrl(rebuilturl);
                 strcpy(infopage->url, rebuilturl);
-                infopage->links_size = 0;
             }
             //parse
             if (parseBuffer(tdoc, docbuf) >= 0) {
-                TidyNode *nodes;
-                int nodes_size;
-                queryNodeByDoc(&nodes, &nodes_size, tdoc, tidyGetRoot(tdoc), "a");
-
-                queryAttrByAllNodes(&(infopage->links), nodes, nodes_size, "href");
-                infopage->links_size = nodes_size;
-
-                free(nodes);
+                infopage->links_size = extractAllLinks(&(infopage->links), tdoc);
                 tidyBufFree(&docbuf);
                 tidyBufFree(&tidy_errbuf);
             }

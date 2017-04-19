@@ -21,7 +21,7 @@ void queryNodeByDocRec(TidyNode **buffer, int *size, TidyDoc doc, TidyNode tnod,
 void queryNodeByDoc(TidyNode **buffer, int *size, TidyDoc doc, TidyNode tnod, char *target) {
     *buffer = malloc(SIZEOF_TIDYNODE);
     *size = 0;
-    return queryNodeByDocRec(buffer, size, doc, tnod, target);
+    queryNodeByDocRec(buffer, size, doc, tnod, target);
 }
 
 int queryAttrByNode(char **buffer, TidyNode node, char *target) {
@@ -40,15 +40,15 @@ int queryAttrByNode(char **buffer, TidyNode node, char *target) {
     return 1;
 }
 //WARN
-void queryAttrByAllNodes(char ***buffers, TidyNode *nodes, int nodes_size, char *target) {
-    *buffers = (char**)calloc(nodes_size + 1, sizeof(char*));
+void queryAttrByAllNodes(char ***buffers, int *nodes_size, TidyNode *nodes, char *target) {
+    *buffers = (char**)calloc(*nodes_size + 1, sizeof(char*));
     int j = 0;
-    for (int i = 0; i < nodes_size; ++i){
-        if(queryAttrByNode(&(*buffers)[i-j], nodes[i], target) == 0){
+    for (int i = 0; i < *nodes_size; ++i){
+        if(queryAttrByNode(&(*buffers)[j], nodes[i], target) == 0)
             j++;
-            *buffers = realloc(*buffers, sizeof(char*) * (nodes_size - j + 1));
-        }
     }
+    *buffers = (char**)realloc(*buffers, sizeof(char*) * (j + 1));
+    *nodes_size = j;
 }
 
 int parseAux(TidyDoc tdoc) {
