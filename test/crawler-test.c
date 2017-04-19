@@ -48,9 +48,7 @@ void testTreePage(char *url, int depth){
         printf("no result\n");
 }
 
-void testInfoPage(){
-    char *url = "https://github.com/";
-
+void testInfoPage(char * url){
     printf("\n\tINFOPAGE TEST on %s\n\n", url);
     struct infopage *infopage = getInfoPage(url);
     if(infopage != NULL){

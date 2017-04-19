@@ -17,10 +17,12 @@ uint write_cb(char *in, uint size, uint nmemb, TidyBuffer *out) {
 int extractAllLinks(char ***array, TidyDoc tdoc){
     TidyNode *nodes;
     int nodes_size;
+
     queryNodeByDoc(&nodes, &nodes_size, tdoc, tidyGetRoot(tdoc), "a");
-    queryAttrByAllNodes(array, &nodes_size, nodes, "href");
+    int size = queryAttrByAllNodes(array, nodes_size, nodes, "href");
+    
     free(nodes);
-    return nodes_size;
+    return size;
 }
 
 struct treepage *getTreePage(char *url, int max, int depth) {
@@ -103,6 +105,19 @@ struct infopage *getInfoPage(char *url) {
             //parse
             if (parseBuffer(tdoc, docbuf) >= 0) {
                 infopage->links_size = extractAllLinks(&(infopage->links), tdoc);
+                
+                /*
+                int len = sizeof(docbuf.bp);
+                infopage->content = malloc(len);
+                memcpy(infopage->content, docbuf.bp, len);
+                struct wc *wc;
+                int wc_size = 0;
+                wordsOccurenceByDoc(&wc, &wc_size, tdoc, tidyGetRoot(tdoc));
+
+                */
+                infopage->content = calloc(1,sizeof(char));
+                getAllText(&infopage->content, tdoc, tidyGetRoot(tdoc));
+
                 tidyBufFree(&docbuf);
                 tidyBufFree(&tidy_errbuf);
             }
@@ -111,4 +126,43 @@ struct infopage *getInfoPage(char *url) {
         curl_easy_cleanup(curl);
     }
     return infopage;
+}
+
+
+struct wc
+{
+    char *word;
+    int count;    
+};
+
+struct wc *function(char *sentence){
+    struct wc *words = malloc(sizeof(struct wc) * 100);
+    /*
+    char word[80];
+
+    int j= 0;
+    for (int i = 0; i < strlen(sentence); ++i) {
+        if(sentence[i] == ' '){
+            int added = 1, k = 0;
+            while(k < nbWord && added==1) {
+                if(strcmp(words[k], word) == 0){
+                    words[k].count++;
+                    added = 0;
+                }
+                ++k;
+            }
+            if(added == 1){
+                words = realloc(words, sizeof(struct words) * (nbWord+1));
+                words[nbWord].count = 1;
+                words[nbWord].word = malloc(sizeof(char) * strlen(tidyWords[i]));
+                strcpy(&(words[nbWord].word), tidyWords[i]);
+            }
+        }else {
+            //WARN if j > BOOM
+            word[j] += sentence[i]
+            j++;
+        }
+    }
+    */
+    return words;
 }
