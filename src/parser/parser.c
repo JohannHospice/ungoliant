@@ -3,6 +3,33 @@
 #include <tidybuffio.h>
 #define SIZEOF_TIDYNODE sizeof(TidyNode)
 
+void getAllText(char **buffer, TidyDoc doc, TidyNode tnod) {
+    TidyNode child;
+    for (child = tidyGetChild(tnod); child; child = tidyGetNext(child)) {        
+        TidyNodeType nt = tidyNodeGetType(child);
+        TidyTagId nid = tidyNodeGetId(child);
+        ctmbstr name = tidyNodeGetName(child);
+        if (!name && nt != TidyNode_Comment && 
+                nid != TidyTag_SCRIPT && nid != TidyTag_STYLE){
+            TidyBuffer buf;
+            tidyBufInit(&buf);
+            tidyNodeGetText(doc, child, &buf);
+            if (buf.bp && buf.size) {
+                char *cp = (char *) buf.bp;
+                int len = strlen(cp);
+                if (len) {
+                    int sizeofNeeded = (strlen(*buffer) + len + 1) * sizeof(char);
+                    if (sizeof(*buffer) < sizeofNeeded)
+                        *buffer = realloc(*buffer, sizeofNeeded);
+                    strcat(*buffer, cp);
+                }
+            }
+            tidyBufFree(&buf);
+        }
+        getAllText(buffer, doc, child);
+    }
+}
+
 void queryNodeByDocRec(TidyNode **buffer, int *size, TidyDoc doc, TidyNode tnod, char *target) {
     TidyNode child;
     for (child = tidyGetChild(tnod); child; child = tidyGetNext(child)) {
@@ -40,15 +67,15 @@ int queryAttrByNode(char **buffer, TidyNode node, char *target) {
     return 1;
 }
 //WARN
-void queryAttrByAllNodes(char ***buffers, int *nodes_size, TidyNode *nodes, char *target) {
-    *buffers = (char**)calloc(*nodes_size + 1, sizeof(char*));
+int queryAttrByAllNodes(char ***buffers, int nodes_size, TidyNode *nodes, char *target) {
+    *buffers = (char**)calloc(nodes_size + 1, sizeof(char*));
     int j = 0;
-    for (int i = 0; i < *nodes_size; ++i){
+    for (int i = 0; i < nodes_size; ++i){
         if(queryAttrByNode(&(*buffers)[j], nodes[i], target) == 0)
             j++;
     }
-    *buffers = (char**)realloc(*buffers, sizeof(char*) * (j + 1));
-    *nodes_size = j;
+    *buffers = (char**)realloc(*buffers, sizeof(char*) * (j));
+    return j;
 }
 
 int parseAux(TidyDoc tdoc) {
