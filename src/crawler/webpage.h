@@ -1,8 +1,8 @@
 struct infopage{
-    struct url *parseurl;
     char *url;
     char **links;
     int links_size;
+    char *content;
 };
 
 struct treepage {
