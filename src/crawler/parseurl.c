@@ -7,6 +7,7 @@
 
 #define REGEX_RELATIVE_URL "^/?([a-zA-Z0-9.-/=&]+)([#\?]?.*)?$"
 #define REGEX_ABSOLUTE_URL "^([a-z]{3,9})://([a-zA-Z0-9.@_:\\-]+)/?([a-zA-Z0-9.-/=&]+)([#\?]?.*)?$"
+
 void initEmptyString(char **dst){
     *dst = malloc(sizeof(char));
     *dst[0] = 0;
@@ -60,7 +61,7 @@ struct url *parseUrl(const char *source){
     size_t group_size = 5;
     regmatch_t *group = calloc(group_size, sizeof(regmatch_t));
 
-    struct url *url = malloc(sizeof(struct url));
+    struct url *url = malloc(sizeof(struct url) +1);
 
     if(easy_regexec_group(source, REGEX_ABSOLUTE_URL, group, group_size) == 0){
         url->type = 0;
@@ -110,18 +111,31 @@ void printUrl(const struct url *url) {
     else if(url->type == 2) {
         printf("other: %s\n", url->other);
     }
-/*
-    if(url->protocole != NULL)
-    if(url->domain != NULL)
-    if(url->path != NULL)
-    if(url->other != NULL)
-*/
 }
 
-char *composeUrl(const struct url *url){
-    char *str = malloc(sizeof(char));
-    composeUrlBuff(&str, url);
-    return str;
+char *composeUrl(const struct url *url){    
+    char *composedUrl = NULL;
+    switch(url->type){
+        case 0:
+            composedUrl = calloc(1 + 4 + strlen(url->protocole) + strlen(url->domain) + strlen(url->path) + strlen(url->other), sizeof(char));
+            sprintf(composedUrl, "%s://%s/%s%s", 
+                url->protocole, 
+                url->domain, 
+                url->path, 
+                url->other);
+            return composedUrl;
+        case 1:
+            composedUrl = calloc(1 + 1 + strlen(url->path) + strlen(url->other), sizeof(char));
+            sprintf(composedUrl, "/%s%s", 
+                url->path, 
+                url->other);
+            return composedUrl;
+        case 2:
+            composedUrl = calloc(1 + strlen(url->other), sizeof(char));
+            strcpy(composedUrl, url->other);
+            return composedUrl;
+    }
+    return composedUrl;
 }
 
 void composeUrlBuff(char **buff, const struct url *url){

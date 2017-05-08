@@ -4,4 +4,5 @@ void queryNodeByDoc(TidyNode **buffer, int *size, TidyDoc doc, TidyNode tnod, ch
 int parseBuffer(TidyDoc tdoc, TidyBuffer docbuf);
 int parseFile(TidyDoc tdoc, char *filename);
 void queryAttrByNode(char **buffer, TidyNode node, char *target);
-void queryAttrByAllNodes(char ***buffers, TidyNode *nodes, int nodes_size, char *target);
+int queryAttrByAllNodes(char ***buffers, int nodes_size, TidyNode *nodes, char *target);
+void getAllText(char **buffer, TidyDoc doc, TidyNode tnod);
